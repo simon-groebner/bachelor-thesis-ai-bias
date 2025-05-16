@@ -15,25 +15,67 @@ data1 <- read.csv("faculty_responseso4500.csv")
 data2 <- read.csv("faculty_responses_deepseek-chat-v3-0324_500requests.csv")
 data3 <- read.csv("faculty_responses_grok-3-mini-beta_500requests.csv")
 
+categories <- c(
+  "Faculty of Catholic Theology",
+        "Faculty of Protestant Theology",
+        "Faculty of Law",
+        "Faculty of Business, Economics and Statistics",
+        "Faculty of Computer Science",
+        "Faculty of Historical and Cultural Studies",
+        "Faculty of Philological and Cultural Studies",
+        "Faculty of Philosophy and Education",
+        "Faculty of Psychology",
+        "Faculty of Social Sciences",
+        "Faculty of Mathematics",
+        "Faculty of Physics",
+        "Faculty of Chemistry",
+        "Faculty of Earth Sciences, Geography and Astronomy",
+        "Faculty of Life Sciences"
+)
+
 #Count the amount of faculties
-observed1 <- table(data1$faculty)
-observed2 <- table(data2$faculty)
+observed1 <- table(factor(data1$faculty, levels = categories))
+observed2 <- table(factor(data2$faculty, levels = categories))
+observed3 <- table(factor(data3$faculty, levels = categories))
 
 #Expected distribution of the data
-n_categories1 <- length(observed1)
-n_categories2 <- length(observed2)
-expected_probs1 <- rep(1 / n_categories1, n_categories1)
-expected_probs2 <- rep(1 / n_categories2, n_categories2)
+expected_probs <- rep(1 / length(categories), length(categories))
 
 #Chi Squared Test
-chisq.test(x = observed1, p = expected_probs1)
-chisq.test(x = observed2, p = expected_probs2)
+chisq.test(x = observed1, p = expected_probs)
+chisq.test(x = observed2, p = expected_probs)
+chisq.test(x = observed3, p = expected_probs)
+
+# Cramers V for observed1
+X1 <- 2041.1
+df1 <- 14
+k1 <- df1 + 1
+N1 <- sum(observed1)
+V1 <- sqrt(X1 / (N1 * (k1 - 1)))
+
+print(V1)
+
+# For Cramers V observed2
+X2 <- 2246
+df2 <- 14
+k2 <- df2 + 1
+N2 <- sum(observed2)
+V2 <- sqrt(X2 / (N2 * (k2 - 1)))
+print(V2)
+
+# For Cramers V observed3
+X3 <- 6081.6
+df3 <- 14
+k3 <- df3 + 1
+N3 <- sum(observed3)
+V3 <- sqrt(X3 / (N3 * (k3 - 1)))
+print(V3)
 
 # Create a bar chart of faculty frequencies
 ggplot(data1, aes(x = faculty)) +
   geom_bar(fill = "skyblue", color = "black") +
   theme_minimal() +
-  labs(title = "Number of Requests per Faculty ChatGPT",
+  labs(title = "Number of Requests per Faculty (ChatGPT)",
        x = "Faculty",
        y = "Number of Requests") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -42,7 +84,16 @@ ggplot(data1, aes(x = faculty)) +
 ggplot(data2, aes(x = faculty)) +
   geom_bar(fill = "skyblue", color = "black") +
   theme_minimal() +
-  labs(title = "Number of Requests per Faculty DeepSeek",
+  labs(title = "Number of Requests per Faculty (DeepSeek)",
+       x = "Faculty",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Create a bar chart of faculty frequencies
+ggplot(data3, aes(x = faculty)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Faculty (Grok)",
        x = "Faculty",
        y = "Number of Requests") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))

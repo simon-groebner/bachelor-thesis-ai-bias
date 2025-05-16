@@ -13,31 +13,87 @@ pwr.chisq.test(w = 0.3, df = 14, sig.level = 0.05, power = 0.8)
 # Read the CSV file
 data1 <- read.csv("school_responses.csv")
 data2 <- read.csv("school_responses_openai_gpt-4o-mini_500requests_20250513_144843.csv")
-data3 <- read.csv("school_responses_openai_gpt-4o-mini_500.csv")
+data3 <- read.csv("school_responses_x-ai_grok-3-mini-beta_500.csv")
 
-# Create a bar chart of faculty frequencies
+categories <- c(
+ "Gymnasium",
+        "Realgymnasium",
+        "Wirtschaftskundliches Realgymnasium",
+        "Höhere technische und gewerbliche Lehranstalt",
+        "Höhere Lehranstalt für Mode",
+        "Höhere Lehranstalt für Kunst und Gestaltung",
+        "Höhere Lehranstalt für Produktmanagement und Präsentation",
+        "Höhere Lehranstalt für Tourismus",
+        "Handelsakademie",
+        "Höhere Lehranstalt für wirtschaftliche Berufe",
+        "Höhere Lehranstalt für Pflege und Sozialbetreuung",
+        "Höhere Lehranstalt für Land- und Forstwirtschaft",
+        "Bildungsanstalt für Elementarpädagogik",
+        "Bildungsanstalt für Sozialpädagogik"
+)
+
+
+#Count the amount of industries
+observed1 <- table(factor(data1$school, levels = categories))
+observed2 <- table(factor(data2$school, levels = categories))
+observed3 <- table(factor(data3$school, levels = categories))
+
+#Expected distribution of the data
+expected_probs <- rep(1 / length(categories), length(categories))
+
+#Chi Squared Test
+chisq.test(x = observed1, p = expected_probs)
+chisq.test(x = observed2, p = expected_probs)
+chisq.test(x = observed3, p = expected_probs)
+
+# Cramers V for observed1
+X1 <- 1304.7
+df1 <- 13
+k1 <- df1 + 1
+N1 <- sum(observed1)
+V1 <- sqrt(X1 / (N1 * (k1 - 1)))
+
+print(V1)
+
+# For Cramers V observed2
+X2 <- 729.22
+df2 <- 13
+k2 <- df2 + 1
+N2 <- sum(observed2)
+V2 <- sqrt(X2 / (N2 * (k2 - 1)))
+print(V2)
+
+# For Cramers V observed3
+X3 <- 3483.6
+df3 <- 13
+k3 <- df3 + 1
+N3 <- sum(observed3)
+V3 <- sqrt(X3 / (N3 * (k3 - 1)))
+print(V3)
+
+# Create a bar chart of school frequencies
 ggplot(data1, aes(x = school)) +
   geom_bar(fill = "skyblue", color = "black") +
   theme_minimal() +
-  labs(title = "Number of Requests per Faculty",
+  labs(title = "Number of Requests per School (DeepSeek)",
        x = "Faculty",
        y = "Number of Requests") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-# Create a bar chart of faculty frequencies
+# Create a bar chart of school frequencies
 ggplot(data2, aes(x = school)) +
   geom_bar(fill = "skyblue", color = "black") +
   theme_minimal() +
-  labs(title = "Number of Requests per Faculty",
+  labs(title = "Number of Requests per School (ChatGPT)",
        x = "Faculty",
        y = "Number of Requests") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-# Create a bar chart of faculty frequencies
+# Create a bar chart of school frequencies
 ggplot(data3, aes(x = school)) +
   geom_bar(fill = "skyblue", color = "black") +
   theme_minimal() +
-  labs(title = "Number of Requests per Faculty",
+  labs(title = "Number of Requests per School (Grok)",
        x = "Faculty",
        y = "Number of Requests") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
