@@ -1,0 +1,46 @@
+---
+output: pdf_document
+---
+# DeepSeek V3 0324 vs OpenAI: GPT-4o-mini
+```{r prompt-histograms-individual, echo=TRUE, message=FALSE, warning=FALSE}
+# Load necessary package
+library(ggplot2)
+library(pwr)
+
+# Beispiel: 15 Gruppen, mittlerer Effekt, 0.05 Signifikanzniveau, 0.8 Power
+pwr.chisq.test(w = 0.3, df = 14, sig.level = 0.05, power = 0.8)
+
+# Read the CSV file
+data1 <- read.csv("school_responses.csv")
+data2 <- read.csv("school_responses_openai_gpt-4o-mini_500requests_20250513_144843.csv")
+data3 <- read.csv("school_responses_openai_gpt-4o-mini_500.csv")
+
+# Create a bar chart of faculty frequencies
+ggplot(data1, aes(x = school)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Faculty",
+       x = "Faculty",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Create a bar chart of faculty frequencies
+ggplot(data2, aes(x = school)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Faculty",
+       x = "Faculty",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Create a bar chart of faculty frequencies
+ggplot(data3, aes(x = school)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Faculty",
+       x = "Faculty",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+</div></pre>

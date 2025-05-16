@@ -1,0 +1,104 @@
+---
+output: pdf_document
+---
+# DeepSeek V3 0324 vs OpenAI: GPT-4o-mini
+```{r prompt-histograms-individual, echo=TRUE, message=FALSE, warning=FALSE}
+# Load necessary package
+library(ggplot2)
+library(pwr)
+
+# 15 Branchen, mittlerer Effekt, 0.05 Signifikanzniveau, 0.8 Power
+pwr.chisq.test(w = 0.3, df = 14, sig.level = 0.05, power = 0.8)
+
+# Read the CSV file
+data1 <- read.csv("industry_responses_500DS.csv")
+data2 <- read.csv("industry_responses_500_openai_gpt-4o-mini.csv")
+data3 <- read.csv("industry_responses_500_x-ai_grok-3-mini-beta.csv")
+
+
+categories <- c(
+  "Bau, Baunebengewerbe, Holz, Gebäudetechnik",
+        "Bergbau, Rohstoffe, Glas, Keramik, Stein",
+        "Büro, Marketing, Finanz, Recht, Sicherheit",
+        "Chemie, Biotechnologie, Lebensmittel, Kunststoffe",
+        "Elektrotechnik, Elektronik, Telekommunikation, IT",
+        "Handel, Logistik, Verkehr",
+        "Landwirtschaft, Gartenbau, Forstwirtschaft",
+        "Maschinenbau, Kfz, Metall",
+        "Medien, Grafik, Design, Druck, Kunst, Kunsthandwerk",
+        "Reinigung, Hausbetreuung, Anlern- und Hilfsberufe",
+        "Soziales, Gesundheit, Schönheitspflege",
+        "Textil und Bekleidung, Mode, Leder",
+        "Tourismus, Gastgewerbe, Freizeit",
+        "Umwelt",
+        "Wissenschaft, Bildung, Forschung und Entwicklung"
+)
+
+
+#Count the amount of industries
+observed1 <- table(factor(data1$industry, levels = categories))
+observed2 <- table(factor(data2$industry, levels = categories))
+observed3 <- table(factor(data3$industry, levels = categories))
+
+#Expected distribution of the data
+expected_probs <- rep(1 / length(categories), length(categories))
+
+#Chi Squared Test
+chisq.test(x = observed1, p = expected_probs)
+chisq.test(x = observed2, p = expected_probs)
+chisq.test(x = observed3, p = expected_probs)
+
+# Cramers V for observed1
+X1 <- 5007
+df1 <- 14
+k1 <- df1 + 1
+N1 <- sum(observed1)
+V1 <- sqrt(X1 / (N1 * (k1 - 1)))
+
+print(V1)
+
+# For Cramers V observed2
+X2 <- 1249.3
+df2 <- 14
+k2 <- df2 + 1
+N2 <- sum(observed2)
+V2 <- sqrt(X2 / (N2 * (k2 - 1)))
+print(V2)
+
+# For Cramers V observed3
+X3 <- 225.79
+df3 <- 14
+k3 <- df3 + 1
+N3 <- sum(observed3)
+V3 <- sqrt(X3 / (N3 * (k3 - 1)))
+print(V3)
+
+# Create a bar chart of industry frequencies
+ggplot(data1, aes(x = industry)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Industry (DeepSeek)",
+       x = "Faculty",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Create a bar chart of industry frequencies
+ggplot(data2, aes(x = industry)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Industry (ChatGPT)",
+       x = "Faculty",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Create a bar chart of industry frequencies
+ggplot(data3, aes(x = industry)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Industry (Grok)",
+       x = "Faculty",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+</div></pre>
