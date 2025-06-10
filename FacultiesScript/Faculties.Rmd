@@ -1,99 +1,192 @@
 ---
+title: "Data Evaluation Faculties Prompt"
+author: "Simon Gröbner 12119900"
 output: pdf_document
 ---
-# DeepSeek V3 0324 vs OpenAI: GPT-4o-mini
-```{r prompt-histograms-individual, echo=TRUE, message=FALSE, warning=FALSE}
-# Load necessary package
+# Power Analysis & Chi Squared Test
+```{r faculties-power-chi-test, echo=TRUE, message=FALSE, warning=FALSE}
+# Load necessary packages
 library(ggplot2)
 library(pwr)
 
-# Beispiel: 15 Fakultäten, mittlerer Effekt, 0.05 Signifikanzniveau, 0.8 Power
+# Power analysis for reference
 pwr.chisq.test(w = 0.3, df = 14, sig.level = 0.05, power = 0.8)
 
-# Read the CSV file
-data1 <- read.csv("faculty_responseso4500.csv")
-data2 <- read.csv("faculty_responses_deepseek-chat-v3-0324_500requests.csv")
-data3 <- read.csv("faculty_responses_grok-3-mini-beta_500requests.csv")
+# Read the CSV files
+faculties_gpt_raw <- read.csv("faculty_responses_gpt-4o-mini_500requests.csv")
+faculties_deepseek_raw <- read.csv("faculty_responses_deepseek-chat-v3-0324_500requests.csv")
+faculties_grok_raw <- read.csv("faculty_responses_grok-3-mini-beta_500requests.csv")
 
+# Faculty categories
 categories <- c(
-  "Faculty of Catholic Theology",
-        "Faculty of Protestant Theology",
-        "Faculty of Law",
-        "Faculty of Business, Economics and Statistics",
-        "Faculty of Computer Science",
-        "Faculty of Historical and Cultural Studies",
-        "Faculty of Philological and Cultural Studies",
-        "Faculty of Philosophy and Education",
-        "Faculty of Psychology",
-        "Faculty of Social Sciences",
-        "Faculty of Mathematics",
-        "Faculty of Physics",
-        "Faculty of Chemistry",
-        "Faculty of Earth Sciences, Geography and Astronomy",
-        "Faculty of Life Sciences"
+  "Faculty of Catholic Theology", "Faculty of Protestant Theology", "Faculty of Law",
+  "Faculty of Business, Economics and Statistics", "Faculty of Computer Science",
+  "Faculty of Historical and Cultural Studies", "Faculty of Philological and Cultural Studies",
+  "Faculty of Philosophy and Education", "Faculty of Psychology", "Faculty of Social Sciences",
+  "Faculty of Mathematics", "Faculty of Physics", "Faculty of Chemistry",
+  "Faculty of Earth Sciences, Geography and Astronomy", "Faculty of Life Sciences"
 )
 
-#Count the amount of faculties
-observed1 <- table(factor(data1$faculty, levels = categories))
-observed2 <- table(factor(data2$faculty, levels = categories))
-observed3 <- table(factor(data3$faculty, levels = categories))
+# Helper function for analysis
+analyze_group <- function(data, group_name) {
+  observed <- table(factor(data$faculty, levels = categories))
+  chi_result <- chisq.test(x = observed, p = rep(1/length(categories), length(categories)))
+  X <- chi_result$statistic
+  N <- sum(observed)
+  df <- chi_result$parameter
+  V <- sqrt(as.numeric(X) / (N * as.numeric(df)))
+  cat("\n", group_name, "\n")
+  print(chi_result)
+  cat("Cramér's V:", V, "\n")
+}
 
-#Expected distribution of the data
-expected_probs <- rep(1 / length(categories), length(categories))
+# Define groups to analyze
+groups <- list(
+  default = list(gender = "default", nation = "default"),
+  gender_non_binary = list(gender = "non_binary", nation = "default"),
+  gender_female     = list(gender = "female", nation = "default"),
+  gender_male       = list(gender = "male", nation = "default"),
+  nation_austrian   = list(gender = "default", nation = "austrian"),
+  nation_somalian   = list(gender = "default", nation = "somalian"),
+  nation_japanese   = list(gender = "default", nation = "japanese"),
+  nation_canadian   = list(gender = "default", nation = "canadian"),
+  nation_australian = list(gender = "default", nation = "australian"),
+  nation_brazilian  = list(gender = "default", nation = "brazilian")
+)
 
-#Chi Squared Test
-chisq.test(x = observed1, p = expected_probs)
-chisq.test(x = observed2, p = expected_probs)
-chisq.test(x = observed3, p = expected_probs)
+# Apply the analysis for each group across all models
+for (group in names(groups)) {
+  filters <- groups[[group]]
 
-# Cramers V for observed1
-X1 <- 2041.1
-df1 <- 14
-k1 <- df1 + 1
-N1 <- sum(observed1)
-V1 <- sqrt(X1 / (N1 * (k1 - 1)))
+  gpt_filtered <- subset(faculties_gpt_raw, gender == filters$gender & nation == filters$nation)
+  deepseek_filtered <- subset(faculties_deepseek_raw, gender == filters$gender & nation == filters$nation)
+  grok_filtered <- subset(faculties_grok_raw, gender == filters$gender & nation == filters$nation)
 
-print(V1)
+  analyze_group(gpt_filtered, paste0("GPT - ", group))
+  analyze_group(deepseek_filtered, paste0("DeepSeek - ", group))
+  analyze_group(grok_filtered, paste0("Grok - ", group))
+}
 
-# For Cramers V observed2
-X2 <- 2246
-df2 <- 14
-k2 <- df2 + 1
-N2 <- sum(observed2)
-V2 <- sqrt(X2 / (N2 * (k2 - 1)))
-print(V2)
+```
 
-# For Cramers V observed3
-X3 <- 6081.6
-df3 <- 14
-k3 <- df3 + 1
-N3 <- sum(observed3)
-V3 <- sqrt(X3 / (N3 * (k3 - 1)))
-print(V3)
 
-# Create a bar chart of faculty frequencies
-ggplot(data1, aes(x = faculty)) +
+# Histrogramms Default
+```{r faculties-histogramms-default, echo=TRUE, message=FALSE, warning=FALSE}
+faculties_gpt_default <- subset(faculties_gpt_raw, gender == "default" & nation == "default")
+faculties_deepseek_default <- subset(faculties_deepseek_raw, gender == "default" & nation == "default")
+faculties_grok_default <- subset(faculties_grok_raw, gender == "default" & nation == "default")
+# Bar plots
+ggplot(faculties_gpt_default, aes(x = faculty)) +
   geom_bar(fill = "skyblue", color = "black") +
   theme_minimal() +
-  labs(title = "Number of Requests per Faculty (ChatGPT)",
+  labs(title = "Number of Requests per Faculty (ChatGPT, default nation & gender)",
        x = "Faculty",
        y = "Number of Requests") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-# Create a bar chart of faculty frequencies
-ggplot(data2, aes(x = faculty)) +
+ggplot(faculties_deepseek_default, aes(x = faculty)) +
   geom_bar(fill = "skyblue", color = "black") +
   theme_minimal() +
-  labs(title = "Number of Requests per Faculty (DeepSeek)",
+  labs(title = "Number of Requests per Faculty (DeepSeek, default nation & gender)",
        x = "Faculty",
        y = "Number of Requests") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-# Create a bar chart of faculty frequencies
-ggplot(data3, aes(x = faculty)) +
+ggplot(faculties_grok_default, aes(x = faculty)) +
   geom_bar(fill = "skyblue", color = "black") +
   theme_minimal() +
-  labs(title = "Number of Requests per Faculty (Grok)",
+  labs(title = "Number of Requests per Faculty (Grok, default nation & gender)",
+       x = "Faculty",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Histrogramms Male
+```{r faculties-histogramms-default, echo=TRUE, message=FALSE, warning=FALSE}
+faculties_gpt_male <- subset(faculties_gpt_raw, gender == "male" & nation == "default")
+faculties_deepseek_male <- subset(faculties_deepseek_raw, gender == "male" & nation == "default")
+faculties_grok_male <- subset(faculties_grok_raw, gender == "male" & nation == "default")
+# Bar plots
+ggplot(faculties_gpt_male, aes(x = faculty)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Faculty (ChatGPT, Male)",
+       x = "Faculty",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(faculties_deepseek_male, aes(x = faculty)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Faculty (DeepSeek, Male)",
+       x = "Faculty",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(faculties_grok_male, aes(x = faculty)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Faculty (Grok, Male)",
+       x = "Faculty",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+# Histrogramms Female
+```{r faculties-histogramms-default, echo=TRUE, message=FALSE, warning=FALSE}
+faculties_gpt_female <- subset(faculties_gpt_raw, gender == "female" & nation == "default")
+faculties_deepseek_female <- subset(faculties_deepseek_raw, gender == "female" & nation == "default")
+faculties_grok_female <- subset(faculties_grok_raw, gender == "female" & nation == "default")
+# Bar plots
+ggplot(faculties_gpt_female, aes(x = faculty)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Faculty (ChatGPT, Female)",
+       x = "Faculty",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(faculties_deepseek_female, aes(x = faculty)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Faculty (DeepSeek, Female)",
+       x = "Faculty",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(faculties_grok_female, aes(x = faculty)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Faculty (Grok, Female)",
+       x = "Faculty",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+# Histrogramms Non-Binary
+```{r faculties-histogramms-default, echo=TRUE, message=FALSE, warning=FALSE}
+faculties_gpt_non_binary <- subset(faculties_gpt_raw, gender == "non_binary" & nation == "default")
+faculties_deepseek_non_binary <- subset(faculties_deepseek_raw, gender == "non_binary" & nation == "default")
+faculties_grok_non_binary <- subset(faculties_grok_raw, gender == "non_binary" & nation == "default")
+# Bar plots
+ggplot(faculties_gpt_non_binary, aes(x = faculty)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Faculty (ChatGPT, Non Binary)",
+       x = "Faculty",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(faculties_deepseek_non_binary, aes(x = faculty)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Faculty (DeepSeek, Non Binary)",
+       x = "Faculty",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(faculties_grok_non_binary, aes(x = faculty)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Faculty (Grok, Non Binary)",
        x = "Faculty",
        y = "Number of Requests") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
