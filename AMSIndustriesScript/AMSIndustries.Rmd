@@ -107,5 +107,96 @@ ggplot(industries_grok_default, aes(x = industry)) +
        y = "Number of Requests") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+# Histrogramms Male
+```{r faculties-histogramms-male, echo=TRUE, message=FALSE, warning=FALSE}
+industries_gpt_male <- subset(gpt_raw_industries, gender == "male" & nation == "default")
+industries_deepseek_male <- subset(deepseek_raw_industries, gender == "male" & nation == "default")
+industries_grok_male <- subset(grok_raw_industries, gender == "male" & nation == "default")
+# Bar plots
+ggplot(industries_gpt_male, aes(x = industry)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Industry (ChatGPT, Male)",
+       x = "Industry",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
+ggplot(industries_deepseek_male, aes(x = industry)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Industry (DeepSeek, Male)",
+       x = "Industry",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(industries_grok_male, aes(x = industry)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Industry (Grok, Male)",
+       x = "Industry",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Histrogramms Female
+```{r faculties-histogramms-female, echo=TRUE, message=FALSE, warning=FALSE}
+industries_gpt_female <- subset(gpt_raw_industries, gender == "female" & nation == "default")
+industries_deepseek_female <- subset(deepseek_raw_industries, gender == "female" & nation == "default")
+industries_grok_female <- subset(grok_raw_industries, gender == "female" & nation == "default")
+# Bar plots
+ggplot(industries_gpt_female, aes(x = industry)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Industry (ChatGPT, Female)",
+       x = "Industry",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(industries_deepseek_female, aes(x = industry)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Industry (DeepSeek, Female)",
+       x = "Industry",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(industries_grok_female, aes(x = industry)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Industry (Grok, Female)",
+       x = "Industry",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Histrogramms Non Binary
+```{r faculties-histogramms-non-binary, echo=TRUE, message=FALSE, warning=FALSE}
+industries_gpt_non_binary <- subset(gpt_raw_industries, gender == "non_binary" & nation == "default")
+industries_deepseek_non_binary <- subset(deepseek_raw_industries, gender == "non_binary" & nation == "default")
+industries_grok_non_binary <- subset(grok_raw_industries, gender == "non_binary" & nation == "default")
+# Bar plots
+ggplot(industries_gpt_non_binary, aes(x = industry)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Industry (ChatGPT, Non Binary)",
+       x = "Industry",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(industries_deepseek_non_binary, aes(x = industry)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Industry (DeepSeek, Non Binary)",
+       x = "Industry",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(industries_grok_non_binary, aes(x = industry)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per Industry (Grok, Non Binary)",
+       x = "Industry",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 </div></pre>

@@ -87,7 +87,7 @@ ggplot(schools_gpt_default, aes(x = school)) +
   geom_bar(fill = "skyblue", color = "black") +
   theme_minimal() +
   labs(title = "Number of Requests per School (ChatGPT, default nation & gender)",
-       x = "Industry",
+       x = "School",
        y = "Number of Requests") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
@@ -95,7 +95,7 @@ ggplot(schools_deepseek_default, aes(x = school)) +
   geom_bar(fill = "skyblue", color = "black") +
   theme_minimal() +
   labs(title = "Number of Requests per School (DeepSeek, default nation & gender)",
-       x = "Industry",
+       x = "School",
        y = "Number of Requests") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
@@ -103,7 +103,98 @@ ggplot(schools_grok_default, aes(x = school)) +
   geom_bar(fill = "skyblue", color = "black") +
   theme_minimal() +
   labs(title = "Number of Requests per School (Grok, default nation & gender)",
-       x = "Industry",
+       x = "School",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Histrogramms Male
+```{r faculties-histogramms-male, echo=TRUE, message=FALSE, warning=FALSE}
+schools_gpt_male <- subset(gpt_raw_schools, gender == "male" & nation == "default")
+schools_deepseek_male <- subset(deepseek_raw_schools, gender == "male" & nation == "default")
+schools_grok_male <- subset(grok_raw_schools, gender == "male" & nation == "default")
+# Bar plots
+ggplot(schools_gpt_male, aes(x = school)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per School (ChatGPT, Male)",
+       x = "School",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(schools_deepseek_male, aes(x = school)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per School (DeepSeek, Male)",
+       x = "School",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(schools_grok_male, aes(x = school)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per School (Grok, Male)",
+       x = "School",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+# Histrogramms Female
+```{r faculties-histogramms-female, echo=TRUE, message=FALSE, warning=FALSE}
+schools_gpt_female <- subset(gpt_raw_schools, gender == "female" & nation == "default")
+schools_deepseek_female <- subset(deepseek_raw_schools, gender == "female" & nation == "default")
+schools_grok_female <- subset(grok_raw_schools, gender == "female" & nation == "default")
+# Bar plots
+ggplot(schools_gpt_female, aes(x = school)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per School (ChatGPT, Female)",
+       x = "School",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(schools_deepseek_female, aes(x = school)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per School (DeepSeek, Female)",
+       x = "School",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(schools_grok_female, aes(x = school)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per School (Grok, Female)",
+       x = "School",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+# Histrogramms Non-Binary
+```{r faculties-histogramms-non-binary, echo=TRUE, message=FALSE, warning=FALSE}
+schools_gpt_non_binary <- subset(gpt_raw_schools, gender == "non_binary" & nation == "default")
+schools_deepseek_non_binary <- subset(deepseek_raw_schools, gender == "non_binary" & nation == "default")
+schools_grok_non_binary <- subset(grok_raw_schools, gender == "non_binary" & nation == "default")
+# Bar plots
+ggplot(schools_gpt_non_binary, aes(x = school)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per School (ChatGPT, Non Binary)",
+       x = "School",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(schools_deepseek_non_binary, aes(x = school)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per School (DeepSeek, Non Binary)",
+       x = "School",
+       y = "Number of Requests") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(schools_grok_non_binary, aes(x = school)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Number of Requests per School (Grok, Non Binary)",
+       x = "School",
        y = "Number of Requests") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```

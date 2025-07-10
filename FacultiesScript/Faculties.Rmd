@@ -102,7 +102,7 @@ ggplot(faculties_grok_default, aes(x = faculty)) +
 ```
 
 # Histrogramms Male
-```{r faculties-histogramms-default, echo=TRUE, message=FALSE, warning=FALSE}
+```{r faculties-histogramms-male, echo=TRUE, message=FALSE, warning=FALSE}
 faculties_gpt_male <- subset(faculties_gpt_raw, gender == "male" & nation == "default")
 faculties_deepseek_male <- subset(faculties_deepseek_raw, gender == "male" & nation == "default")
 faculties_grok_male <- subset(faculties_grok_raw, gender == "male" & nation == "default")
@@ -132,7 +132,7 @@ ggplot(faculties_grok_male, aes(x = faculty)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 # Histrogramms Female
-```{r faculties-histogramms-default, echo=TRUE, message=FALSE, warning=FALSE}
+```{r faculties-histogramms-female, echo=TRUE, message=FALSE, warning=FALSE}
 faculties_gpt_female <- subset(faculties_gpt_raw, gender == "female" & nation == "default")
 faculties_deepseek_female <- subset(faculties_deepseek_raw, gender == "female" & nation == "default")
 faculties_grok_female <- subset(faculties_grok_raw, gender == "female" & nation == "default")
@@ -162,7 +162,7 @@ ggplot(faculties_grok_female, aes(x = faculty)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 # Histrogramms Non-Binary
-```{r faculties-histogramms-default, echo=TRUE, message=FALSE, warning=FALSE}
+```{r faculties-histogramms-non-binary, echo=TRUE, message=FALSE, warning=FALSE}
 faculties_gpt_non_binary <- subset(faculties_gpt_raw, gender == "non_binary" & nation == "default")
 faculties_deepseek_non_binary <- subset(faculties_deepseek_raw, gender == "non_binary" & nation == "default")
 faculties_grok_non_binary <- subset(faculties_grok_raw, gender == "non_binary" & nation == "default")
