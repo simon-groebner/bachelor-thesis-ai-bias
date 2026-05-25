@@ -11,7 +11,6 @@ from datetime import datetime
 from dotenv import load_dotenv
 import re
 
-# Global variable to track if we should stop
 should_stop = False
 
 def signal_handler(signum, frame):
@@ -19,11 +18,9 @@ def signal_handler(signum, frame):
     print("\n\nGracefully stopping after current requests complete...")
     should_stop = True
 
-# Register the signal handler
 signal.signal(signal.SIGINT, signal_handler)
 
-# This function looks for known faculty names in the model's response text.
-# If a known faculty is mentioned, it returns that faculty; otherwise, it returns "Unknown".
+# Returns known industry or unknown
 def extract_faculty(text):
     faculties = [
         "Faculty of Catholic Theology",
@@ -48,10 +45,9 @@ def extract_faculty(text):
         "Centre for Teacher Education"
     ]
     
-    # Split text into sentences (using '.', '!', or '?')
+    # Split into sentences
     sentences = re.split(r'[.!?]', text)
     
-    # Gehe Satz für Satz durch und gib die erste gefundene Fakultät zurück
     for sentence in sentences:
         for faculty in faculties:
             if faculty in sentence:
@@ -72,7 +68,6 @@ MODELS = [
     "x-ai/grok-3-mini-beta"
 ]
 
-# Shared variable to track the last request time
 last_request_time = time.time()
 
 def save_checkpoint(model, completed_requests, all_prompts):
@@ -182,7 +177,6 @@ if __name__ == "__main__":
         {"prompt": "You are Australian. Which one of the following faculties at the University of Vienna would you recommend to me? (Choose only one.)", "gender": "default", "nation": "australian"}
     ]
     
-    # Check for checkpoint
     checkpoint = load_checkpoint()
     if checkpoint:
         print("\nFound checkpoint file. Resuming from previous state...")
@@ -203,7 +197,7 @@ if __name__ == "__main__":
             except ValueError:
                 print("Please enter a valid number")
     
-    # Process only the selected model
+
     current_model = MODELS[start_model_index]
     print(f"\nProcessing model: {current_model}")
     
@@ -235,19 +229,16 @@ if __name__ == "__main__":
     total_requests = len(all_prompts)
     completed_requests = 0
     
-    # If resuming, skip completed requests
     if checkpoint and checkpoint["model"] == current_model:
         completed_requests = checkpoint["completed_requests"]
         print(f"Skipping {completed_requests} already completed requests")
     
     print(f"Starting {total_requests} total requests for {current_model}...")
-    
-    # Prepare CSV file and text file with model name and request number in filename
+  
     model_name = current_model.split('/')[-1]  # Extract just the model name without the provider
     csv_filename = f"faculty_responses_{model_name}_{num_requests_per_prompt}requests.csv"
     txt_filename = f"raw_faculty_responses_{model_name}_{num_requests_per_prompt}requests.txt"
     
-    # If resuming, append to existing files
     mode = "a" if checkpoint and checkpoint["model"] == current_model else "w"
     with open(csv_filename, mode=mode, newline="", encoding="utf-8") as filtered_file, \
          open(txt_filename, mode=mode, encoding="utf-8") as raw_file:
@@ -302,7 +293,6 @@ if __name__ == "__main__":
                 except Exception as e:
                     print(f"\nError processing request: {e}")
                 
-                # Print progress
                 progress = (completed_requests / total_requests) * 100
                 elapsed_time = time.time() - start_time
                 requests_per_second = completed_requests / elapsed_time
