@@ -5,14 +5,12 @@ output: pdf_document
 ---
 # Power Analysis & Chi Squared Test
 ```{r industries-power-chi-test, echo=TRUE, message=FALSE, warning=FALSE}
-# Load necessary package
 library(ggplot2)
 library(pwr)
 
 # Power analysis for reference
-pwr.chisq.test(w = 0.3, df = 14, sig.level = 0.05, power = 0.8)
+pwr.chisq.test(w = 0.3, df = 15, sig.level = 0.05, power = 0.8)
 
-# Read the CSV file
 gpt_raw_industries<- read.csv("industry_responses_gpt-4o-mini_500requests.csv")
 deepseek_raw_industries <- read.csv("industry_responses_deepseek-chat-v3-0324_500requests.csv")
 grok_raw_industries <- read.csv("industry_responses_grok-3-mini-beta_500requests.csv")
@@ -36,20 +34,6 @@ categories <- c(
         "Science, Education, Research and Development"
 )
 
-# Helper function for analysis
-analyze_group <- function(data, group_name) {
-  observed <- table(factor(data$industry, levels = categories))
-  chi_result <- chisq.test(x = observed, p = rep(1/length(categories), length(categories)))
-  X <- chi_result$statistic
-  N <- sum(observed)
-  df <- chi_result$parameter
-  V <- sqrt(as.numeric(X) / (N * as.numeric(df)))
-  cat("\n", group_name, "\n")
-  print(chi_result)
-  cat("Cramér's V:", V, "\n")
-}
-
-# Define groups to analyze
 groups <- list(
   default = list(gender = "default", nation = "default"),
   gender_non_binary = list(gender = "non_binary", nation = "default"),
@@ -63,17 +47,94 @@ groups <- list(
   nation_brazilian  = list(gender = "default", nation = "brazilian")
 )
 
-# Apply the analysis for each group across all models
-for (group in names(groups)) {
-  filters <- groups[[group]]
+models <- list(
+  GPT = gpt_raw_industries, 
+  DeepSeek = deepseek_raw_industries, 
+  Grok = grok_raw_industries
+)
+```
+```{r tests, echo=TRUE, message=FALSE, warning=FALSE}
+jsd <- function(p, q) {
+  p <- p / sum(p)
+  q <- q / sum(q)
+  
+  m <- 0.5 * (p + q)
+  
+  kl_div <- function(a, b) {
+    idx <- a > 0
+    sum(a[idx] * log2(a[idx] / b[idx]))
+  }
+  
+  0.5 * kl_div(p, m) + 0.5 * kl_div(q, m)
+}
 
-  gpt_filtered <- subset(gpt_raw_industries, gender == filters$gender & nation == filters$nation)
-  deepseek_filtered <- subset(deepseek_raw_industries, gender == filters$gender & nation == filters$nation)
-  grok_filtered <- subset(grok_raw_industries, gender == filters$gender & nation == filters$nation)
+for (model_name in names(models)) {
+  
+  data <- models[[model_name]]
+  
+  baseline_data <- subset(data, gender == "default" & nation == "default")
+  baseline_counts <- table(factor(baseline_data$industry, levels = categories))
+  
+  baseline_probs <- (baseline_counts + 1) / sum(baseline_counts + 1)
+  
+  for (group_name in names(groups)) {
+    
+    filters <- groups[[group_name]]
+    persona_data <- subset(data, gender == filters$gender & nation == filters$nation)
+    
+    observed <- table(factor(persona_data$industry, levels = categories))
+    
+    if (sum(observed) == 0) {
+      cat("\n[Warning] No data found for:", model_name, "-", group_name, "\n")
+      next
+    }
+    
+    observed_probs <- observed / sum(observed)
+    
+    if (group_name == "default") {
+      
+      chi_res <- chisq.test(x = observed, p = rep(1/length(categories), length(categories)))
+      
+      cat("\n======================================================\n")
+      cat("STEP 1: SYSTEMIC BIAS (Technical Skew) | Model:", model_name, "\n")
+      print(chi_res)
+      
+      # Cramér's V
+      V <- sqrt(as.numeric(chi_res$statistic) / 
+                (sum(observed) * (length(categories) - 1)))
+      
+      cat("Cramér's V (Effect Size of Tech Skew):", V, "\n")
+      
+    } else {
+      
+      expected <- sum(observed) * baseline_probs
+      
+      if (any(expected < 5)) {
+        cat("\n[Warning] Low expected counts (<5) for:", model_name, "-", group_name, "\n")
+      }
+      
+      chi_res <- suppressWarnings(
+        chisq.test(x = observed, p = baseline_probs)
+      )
+      
+      cat("\n--- STEP 2: TRIGGERED BIAS (Sensitivity) --- \n")
+      cat("Model:", model_name, "| Persona:", group_name, "\n")
+      print(chi_res)
+      
+      V_sens <- sqrt(as.numeric(chi_res$statistic) / 
+                     (sum(observed) * (length(categories) - 1)))
+      
+      cat("Cramér's V (Persona Sensitivity):", V_sens, "\n")
+      
+      TVD <- 0.5 * sum(abs(observed_probs - baseline_probs))
+      
+      cat("Total Variation Distance (Robust Sensitivity):", TVD, "\n")
+      
+      JSD <- jsd(observed_probs, baseline_probs)
 
-  analyze_group(gpt_filtered, paste0("GPT - ", group))
-  analyze_group(deepseek_filtered, paste0("DeepSeek - ", group))
-  analyze_group(grok_filtered, paste0("Grok - ", group))
+      cat("Jensen-Shannon Divergence:", JSD, "\n")
+    }
+  }
 }
 ```
 
@@ -108,7 +169,7 @@ ggplot(industries_grok_default, aes(x = industry)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 # Histrogramms Male
-```{r faculties-histogramms-male, echo=TRUE, message=FALSE, warning=FALSE}
+```{r industry-histogramms-male, echo=TRUE, message=FALSE, warning=FALSE}
 industries_gpt_male <- subset(gpt_raw_industries, gender == "male" & nation == "default")
 industries_deepseek_male <- subset(deepseek_raw_industries, gender == "male" & nation == "default")
 industries_grok_male <- subset(grok_raw_industries, gender == "male" & nation == "default")
@@ -139,7 +200,7 @@ ggplot(industries_grok_male, aes(x = industry)) +
 ```
 
 # Histrogramms Female
-```{r faculties-histogramms-female, echo=TRUE, message=FALSE, warning=FALSE}
+```{r industry-histogramms-female, echo=TRUE, message=FALSE, warning=FALSE}
 industries_gpt_female <- subset(gpt_raw_industries, gender == "female" & nation == "default")
 industries_deepseek_female <- subset(deepseek_raw_industries, gender == "female" & nation == "default")
 industries_grok_female <- subset(grok_raw_industries, gender == "female" & nation == "default")
@@ -170,7 +231,7 @@ ggplot(industries_grok_female, aes(x = industry)) +
 ```
 
 # Histrogramms Non Binary
-```{r faculties-histogramms-non-binary, echo=TRUE, message=FALSE, warning=FALSE}
+```{r industry-histogramms-non-binary, echo=TRUE, message=FALSE, warning=FALSE}
 industries_gpt_non_binary <- subset(gpt_raw_industries, gender == "non_binary" & nation == "default")
 industries_deepseek_non_binary <- subset(deepseek_raw_industries, gender == "non_binary" & nation == "default")
 industries_grok_non_binary <- subset(grok_raw_industries, gender == "non_binary" & nation == "default")
@@ -198,5 +259,137 @@ ggplot(industries_grok_non_binary, aes(x = industry)) +
        x = "Industry",
        y = "Number of Requests") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+# Histrogramms Paper
+```{r histogramms-paper, echo=TRUE, message=FALSE, warning=FALSE}
+industries_gpt_somalian <- subset(gpt_raw_industries, gender == "default" & nation == "somalian")
+industries_gpt_default <- subset(gpt_raw_industries, gender == "default" & nation == "default")
+
+ggplot(industries_gpt_somalian, aes(x = industry)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 11, face = "bold"),
+  ) +
+  coord_flip() +
+  labs(x = "Industry",
+       y = "Number of Recommendations") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("industry_requests_somalian_gpt.pdf", width = 7, height = 5, dpi = 300)
+
+ggplot(industries_gpt_default, aes(x = industry)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 11, face = "bold"),
+  ) +
+  coord_flip() +
+  labs(x = "Industry",
+       y = "Number of Recommendations") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("industry_requests_baseline_gpt.pdf", width = 7, height = 5, dpi = 300)
+
+
+industries_grok_default <- subset(grok_raw_industries, gender == "default" & nation == "default")
+industries_grok_non_binary <- subset(grok_raw_industries, gender == "non_binary" & nation == "default")
+
+
+ggplot(industries_grok_default, aes(x = industry)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 11, face = "bold"),
+  ) +
+  coord_flip() +
+  labs(x = "Industry",
+       y = "Number of Recommendations") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("industry_requests_baseline_grok.pdf", width = 7, height = 5, dpi = 300)
+
+ggplot(industries_grok_non_binary, aes(x = industry)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 11, face = "bold"),
+  ) +
+  coord_flip() +
+  labs(x = "Industry",
+       y = "Number of Recommendations") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("industry_requests_non_binary_grok.pdf", width = 7, height = 5, dpi = 300)
+
+
+
+```
+# Master Table JSD
+```{r master-table, echo=TRUE, message=FALSE, warning=FALSE}
+library(kableExtra)
+library(dplyr)
+
+jsd_data <- data.frame(
+  Persona = c("Non-Binary", "Female", "Male", "Austrian", "Somalian", "Japanese", "Canadian", "Australian", "Brazilian"),
+  GPT_Fac = c(0.205082, 0.2050823, 0.02660457, 0.05597756, 0.1868724, 0.1361915, 0.05859395, 0.04877, 0.08421826),
+  DS_Fac  = c(0.8517378, 0.4722395, 0.06230477, 0.3899182, 0.3203015, 0.2155579, 0.04165276, 0.2243805, 0.2355162),
+  Grok_Fac = c(0.9188719, 0.05783851, 0.0170552, 0.4095322, 0.6318118, 0.03622124, 0.08594329, 0.2763608, 0.2928464),
+  GPT_Sch = c(0.5105698, 0.1226743, 0.09242414, 0.0139918, 0.09812481, 0.07834614, 0.07318209, 0.08268091, 0.04711791),
+  DS_Sch  = c(0.9053498, 0.2378791, 0.04279977, 0.03281403, 0.1576401, 0.2306472, 0.06420358, 0.07637319, 0.1274788),
+  Grok_Sch = c(0.9732264, 0.5402136, 0.1619204, 0.01217599, 0.7788638, 0.3088034, 0.1532305, 0.608958, 0.5517516),
+  GPT_Ind = c(0.7545909, 0.4641668, 0.05602107, 0.2732205, 0.9541914, 0.151212, 0.03017499, 0.1872155, 0.2904678),
+  DS_Ind  = c(0.8801024, 0.3460793, 0.0326055, 0.2196955, 0.7243192, 0.01567242, 0.0401982, 0.02685619, 0.03969323),
+  Grok_Ind = c(0.1782265, 0.1612095, 0.02208562, 0.3631889, 0.727126, 0.09565002, 0.04939264, 0.06125605, 0.2205551)
+)
+
+
+jsd_data_rounded <- jsd_data %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+table_out <- jsd_data_rounded %>%
+  kbl(format = "latex", booktabs = TRUE, escape = FALSE, longtable = TRUE,
+      caption = "Comparison of Jensen-Shannon Divergence (JSD) Scores Across Models and Lists",
+      col.names = c("Persona", "GPT", "DS", "Grok", "GPT", "DS", "Grok", "GPT", "DS", "Grok")) %>%
+  add_header_above(c(" " = 1, "University Faculties" = 3, "Secondary Schools" = 3, "AMS Industries" = 3)) %>%
+  kable_styling(latex_options = c("striped", "scale_down", "hold_position")) %>%
+  column_spec(1, bold = TRUE)
+
+
+for (i in 2:10) {
+  table_out <- table_out %>%
+    column_spec(i, color = ifelse(jsd_data[, i] > 0.20, "red", "black"))
+}
+
+cat(table_out)
+```
+
+#Master Table Cramer
+```{r master-table-cramer, echo=TRUE, message=FALSE, warning=FALSE}
+library(kableExtra)
+library(dplyr)
+
+cv_data <- data.frame(
+  Context = c("University Faculties", "Secondary Schools", "AMS Industries"),
+  GPT = c(0.5682504, 0.2891936, 0.6320759),
+  DeepSeek = c(0.6302985, 0.7133704, 0.976457),
+  Grok = c(0.9722816, 0.9405323, 0.8464987)
+)
+
+cv_data_rounded <- cv_data %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+table_cv_out <- cv_data_rounded %>%
+  kbl(format = "latex", 
+      booktabs = TRUE, 
+      escape = FALSE,
+      align = "l|ccc", # The '|' creates the vertical line after the first column
+      caption = "Comparison of Systemic Bias (Cramér's V) Baseline Skew",
+      col.names = c("Recommendation Context", "GPT-4o mini", "DeepSeek V3", "Grok 3 mini")) %>%
+  kable_styling(latex_options = c("striped", "hold_position")) %>%
+  column_spec(1, bold = TRUE) %>%
+  row_spec(0, bold = TRUE)
+
+cat(table_cv_out)
 ```
 </div></pre>
