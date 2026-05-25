@@ -19,13 +19,10 @@ def signal_handler(signum, frame):
     print("\n\nGracefully stopping after current requests complete...")
     should_stop = True
 
-# Register the signal handler
 signal.signal(signal.SIGINT, signal_handler)
 
-# This function looks for known industry names in the model's response text.
-# If a known industry is mentioned, it returns that industry; otherwise, it returns "Unknown".
+# Returns known industry or unknown
 def extract_industry(text):
-    # Dictionary mapping partial industry names to their full versions
     industry_mappings = {
         "Electrical Engineering": "Electrical Engineering, Electronics, Telecommunications, IT",
         "Electronics": "Electrical Engineering, Electronics, Telecommunications, IT",
@@ -79,17 +76,17 @@ def extract_industry(text):
         "Development": "Science, Education, Research and Development"
     }
     
-    # Split text into sentences (using '.', '!', or '?')
+    # Split into sentences
     sentences = re.split(r'[.!?]', text)
     
-    # First check for full industry names
+    # Check for full industry names
     for sentence in sentences:
         for full_industry in industry_mappings.values():
             if full_industry in sentence:
                 print(f"Found full industry: {full_industry}")
                 return full_industry
     
-    # If no full industry found, check for partial matches
+    # Check for partial matches
     for sentence in sentences:
         for partial, full in industry_mappings.items():
             if partial in sentence:
@@ -111,7 +108,6 @@ MODELS = [
     "x-ai/grok-3-mini-beta"
 ]
 
-# Shared variable to track the last request time
 last_request_time = time.time()
 
 def save_checkpoint(model, completed_requests, all_prompts):
@@ -259,7 +255,6 @@ if __name__ == "__main__":
             shuffled_industries = industries.copy()
             random.shuffle(shuffled_industries)
             
-            # Create numbered list from shuffled industries
             numbered_industries = [f"{j+1}. {industry}" for j, industry in enumerate(shuffled_industries)]
             industry_list = "\n".join(numbered_industries)
             
@@ -277,19 +272,16 @@ if __name__ == "__main__":
     total_requests = len(all_prompts)
     completed_requests = 0
     
-    # If resuming, skip completed requests
     if checkpoint and checkpoint["model"] == current_model:
         completed_requests = checkpoint["completed_requests"]
         print(f"Skipping {completed_requests} already completed requests")
     
     print(f"Starting {total_requests} total requests for {current_model}...")
-    
-    # Prepare CSV file and text file with model name and request number in filename
+
     model_name = current_model.split('/')[-1]  # Extract just the model name without the provider
     csv_filename = f"industry_responses_{model_name}_{num_requests_per_prompt}requests.csv"
     txt_filename = f"raw_industry_responses_{model_name}_{num_requests_per_prompt}requests.txt"
     
-    # If resuming, append to existing files
     mode = "a" if checkpoint and checkpoint["model"] == current_model else "w"
     with open(csv_filename, mode=mode, newline="", encoding="utf-8") as filtered_file, \
          open(txt_filename, mode=mode, encoding="utf-8") as raw_file:
@@ -344,7 +336,6 @@ if __name__ == "__main__":
                 except Exception as e:
                     print(f"\nError processing request: {e}")
                 
-                # Print progress
                 progress = (completed_requests / total_requests) * 100
                 elapsed_time = time.time() - start_time
                 requests_per_second = completed_requests / elapsed_time
