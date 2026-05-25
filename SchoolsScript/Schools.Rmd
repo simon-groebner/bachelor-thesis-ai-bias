@@ -5,14 +5,11 @@ output: pdf_document
 ---
 # Power Analysis & Chi Squared Test
 ```{r schools-power-chi-test, echo=TRUE, message=FALSE, warning=FALSE}
-# Load necessary package
 library(ggplot2)
 library(pwr)
 
-# Power analysis for reference
 pwr.chisq.test(w = 0.3, df = 14, sig.level = 0.05, power = 0.8)
 
-# Read the CSV file
 gpt_raw_schools<- read.csv("school_responses_gpt-4o-mini_500requests.csv")
 deepseek_raw_schools <- read.csv("school_responses_deepseek-chat-v3-0324_500requests.csv")
 grok_raw_schools <- read.csv("school_responses_grok-3-mini-beta_500requests.csv")
@@ -35,20 +32,6 @@ categories <- c(
         "Bildungsanstalt für Sozialpädagogik"
 )
 
-# Helper function for analysis
-analyze_group <- function(data, group_name) {
-  observed <- table(factor(data$school, levels = categories))
-  chi_result <- chisq.test(x = observed, p = rep(1/length(categories), length(categories)))
-  X <- chi_result$statistic
-  N <- sum(observed)
-  df <- chi_result$parameter
-  V <- sqrt(as.numeric(X) / (N * as.numeric(df)))
-  cat("\n", group_name, "\n")
-  print(chi_result)
-  cat("Cramér's V:", V, "\n")
-}
-
-# Define groups to analyze
 groups <- list(
   default = list(gender = "default", nation = "default"),
   gender_non_binary = list(gender = "non_binary", nation = "default"),
@@ -62,19 +45,99 @@ groups <- list(
   nation_brazilian  = list(gender = "default", nation = "brazilian")
 )
 
-# Apply the analysis for each group across all models
-for (group in names(groups)) {
-  filters <- groups[[group]]
 
-  gpt_filtered <- subset(gpt_raw_schools, gender == filters$gender & nation == filters$nation)
-  deepseek_filtered <- subset(deepseek_raw_schools, gender == filters$gender & nation == filters$nation)
-  grok_filtered <- subset(grok_raw_schools, gender == filters$gender & nation == filters$nation)
+models <- list(
+  GPT = gpt_raw_schools, 
+  DeepSeek = deepseek_raw_schools, 
+  Grok = grok_raw_schools
+)
+```
+```{r tests, echo=TRUE, message=FALSE, warning=FALSE}
+jsd <- function(p, q) {
+  p <- p / sum(p)
+  q <- q / sum(q)
+  
+  m <- 0.5 * (p + q)
+  
+  kl_div <- function(a, b) {
+    idx <- a > 0
+    sum(a[idx] * log2(a[idx] / b[idx]))
+  }
+  
+  0.5 * kl_div(p, m) + 0.5 * kl_div(q, m)
+}
 
-  analyze_group(gpt_filtered, paste0("GPT - ", group))
-  analyze_group(deepseek_filtered, paste0("DeepSeek - ", group))
-  analyze_group(grok_filtered, paste0("Grok - ", group))
+for (model_name in names(models)) {
+  
+  data <- models[[model_name]]
+  
+  baseline_data <- subset(data, gender == "default" & nation == "default")
+  baseline_counts <- table(factor(baseline_data$school, levels = categories))
+  
+  baseline_probs <- (baseline_counts + 1) / sum(baseline_counts + 1)
+  
+  for (group_name in names(groups)) {
+    
+    filters <- groups[[group_name]]
+    persona_data <- subset(data, gender == filters$gender & nation == filters$nation)
+    
+    observed <- table(factor(persona_data$school, levels = categories))
+    
+    if (sum(observed) == 0) {
+      cat("\n[Warning] No data found for:", model_name, "-", group_name, "\n")
+      next
+    }
+    
+    observed_probs <- observed / sum(observed)
+    
+    if (group_name == "default") {
+      
+      chi_res <- chisq.test(x = observed, p = rep(1/length(categories), length(categories)))
+      
+      cat("\n======================================================\n")
+      cat("STEP 1: SYSTEMIC BIAS (Technical Skew) | Model:", model_name, "\n")
+      print(chi_res)
+      
+      # Cramér's V
+      V <- sqrt(as.numeric(chi_res$statistic) / 
+                (sum(observed) * (length(categories) - 1)))
+      
+      cat("Cramér's V (Effect Size of Tech Skew):", V, "\n")
+      
+    } else {
+      
+      expected <- sum(observed) * baseline_probs
+      
+      if (any(expected < 5)) {
+        cat("\n[Warning] Low expected counts (<5) for:", model_name, "-", group_name, "\n")
+      }
+      
+      chi_res <- suppressWarnings(
+        chisq.test(x = observed, p = baseline_probs)
+      )
+      
+      cat("\n--- STEP 2: TRIGGERED BIAS (Sensitivity) --- \n")
+      cat("Model:", model_name, "| Persona:", group_name, "\n")
+      print(chi_res)
+      
+      V_sens <- sqrt(as.numeric(chi_res$statistic) / 
+                     (sum(observed) * (length(categories) - 1)))
+      
+      cat("Cramér's V (Persona Sensitivity):", V_sens, "\n")
+      
+      TVD <- 0.5 * sum(abs(observed_probs - baseline_probs))
+      
+      cat("Total Variation Distance (Robust Sensitivity):", TVD, "\n")
+      
+      JSD <- jsd(observed_probs, baseline_probs)
+
+      cat("Jensen-Shannon Divergence:", JSD, "\n")
+    }
+  }
 }
 ```
+
+
 
 # Histrogramms Default
 ```{r schools-histogramms-default, echo=TRUE, message=FALSE, warning=FALSE}
@@ -197,6 +260,41 @@ ggplot(schools_grok_non_binary, aes(x = school)) +
        x = "School",
        y = "Number of Requests") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Histrogramms Paper
+```{r histogramms-paper, echo=TRUE, message=FALSE, warning=FALSE}
+schools_deepseek_non_binary <- subset(deepseek_raw_schools, gender == "non_binary" & nation == "default")
+
+ggplot(schools_deepseek_non_binary, aes(x = school)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 11, face = "bold"),
+  ) +
+  coord_flip() +
+  labs(x = "School",
+       y = "Number of Recommendations") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("school_requests_non_binary_deepseek.pdf", width = 7, height = 5, dpi = 300)
+
+
+schools_deepseek_default <- subset(deepseek_raw_schools, gender == "default" & nation == "default")
+
+ggplot(schools_deepseek_default, aes(x = school)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 11, face = "bold"),
+  ) +
+  coord_flip() +
+  labs(x = "School",
+       y = "Number of Recommendations") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("school_requests_default_deepseek.pdf", width = 7, height = 5, dpi = 300)
+
 ```
 
 </div></pre>
